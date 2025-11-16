@@ -13,4 +13,16 @@ public class Dialogue_1 : ScriptableObject
     public bool[] autoProgressLine;
     public float autoProgressDelay = 1.5f;
 
+    //Cosas que se van a activar al terminar el dialogo 
+    public GameObject turtle;  
+    public GameObject manager;  
+    public void result()
+    {
+        var manage = manager.GetComponent<PlayerController>();
+        var turtleFollow = turtle.GetComponent<FollowerGround2D>();
+        var turtleHealth = turtle.GetComponent<TurtleHealth>();
+        manage.enabled=true;
+        turtleFollow.enabled = true;
+        turtleHealth.enabled = true;
+    }
 }

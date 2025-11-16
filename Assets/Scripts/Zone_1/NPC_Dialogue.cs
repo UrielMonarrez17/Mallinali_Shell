@@ -20,7 +20,7 @@ private bool isTyping,isDialogueActive;
 
         if (isDialogueActive)
         {
-NextLine();
+            NextLine();
         }
         else
         {
@@ -38,7 +38,7 @@ NextLine();
     {
         isDialogueActive = true;
         dialogueIndex = 0;
-        nameText.SetText(dialogueData.name);
+        nameText.SetText(dialogueData.npcName);
         portraitImage.sprite = dialogueData.npcPortrait;
         dialoguePanel.SetActive(true);
         
@@ -95,5 +95,8 @@ NextLine();
         isDialogueActive = false;
         dialogueText.SetText("");
         dialoguePanel.SetActive(false);
+        dialogueData.result();
     }
+
+
 }
