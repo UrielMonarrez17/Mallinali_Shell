@@ -6,7 +6,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.UIElements;
 
-public class Transition : MonoBehaviour, IInteract
+public class TransitionNI : MonoBehaviour
 {
     [SerializeField] PolygonCollider2D mapBoundry;
     CinemachineConfiner2D confiner;
@@ -29,11 +29,7 @@ public class Transition : MonoBehaviour, IInteract
             interactText.gameObject.SetActive(false);
     }
 
-    void Update()
-    {
-        if(canInteract())
-            beInteracted();
-    }
+
 
     private void OnTriggerEnter2D(Collider2D other)
     {
@@ -41,8 +37,8 @@ public class Transition : MonoBehaviour, IInteract
         {
             if(haveText)
                 interactText.gameObject.SetActive(true);
-            interactAllowed = true;
             player = other.gameObject;
+            beInteracted();
         }
 
     }
@@ -80,15 +76,8 @@ public class Transition : MonoBehaviour, IInteract
     {
         confiner.BoundingShape2D = mapBoundry;
         UpdatePlayerPosition(player);
-        interactAllowed = false;
         if(haveText)
             interactText.gameObject.SetActive(false);
     }
 
-    public bool canInteract()
-    {
-        if (interactAllowed&& Input.GetKeyDown(KeyCode.E))
-            return true;
-        return false;
-    }
 }
