@@ -1,50 +1,85 @@
 using UnityEngine;
-using System.Collections;
 using Unity.Cinemachine;
+using Pathfinding;
 
 public class PlayerManagerDual : MonoBehaviour
 {
-    private int attackCounter = 0;
-    public CinemachineCamera camera;
-    public GameObject warrior;    // Guerrero azteca
-    public GameObject turtle;     // Tortuga
+    // --- Singleton Instance (Easy access) ---
+    public static PlayerManagerDual Instance;
+
+    [Header("Configuration")]
+    public CinemachineCamera camera; // Updated for Unity 6
+    public GameObject warrior;
+    public GameObject turtle;
+    public SpecialFloor floorsito;
     public KeyCode switchKey = KeyCode.Tab;
 
+    [Header("Combo State")]
+    public int hitsRequired = 3;
+    private int currentComboCount = 0;
+
+    // State Tracking
     private GameObject active;
     private GameObject follower;
-
-    public SpecialFloor floorsito;
-
     private bool underWater;
+
+    void Awake()
+    {
+        // Setup Singleton
+        if (Instance == null) Instance = this;
+        else Destroy(gameObject);
+    }
 
     void Start()
     {
-        
-        SetActive(warrior); // Arrancamos con el guerrero
+        SetActive(warrior); 
     }
 
     void Update()
     {
-        if (floorsito != null)
-            underWater = floorsito.getUnderWater();
-            
-        if (Input.GetKeyDown(switchKey))
-            Switch();
+        if (floorsito != null) underWater = floorsito.getUnderWater();
+        if (Input.GetKeyDown(switchKey)) Switch();
     }
 
-     void CambiarTarget(Transform nuevoObjetivo)
+    // --- LOGIC FOR COMBO ---
+    public void RegisterHit()
     {
-        camera.Follow = nuevoObjetivo;
-        camera.LookAt = nuevoObjetivo;
+        currentComboCount++;
+        Debug.Log($"Combo: {currentComboCount}/{hitsRequired}");
+
+        if (currentComboCount >= hitsRequired)
+        {
+            TriggerFollowerAttack();
+            currentComboCount = 0; // Reset
+        }
     }
+
+    private void TriggerFollowerAttack()
+    {
+        if (follower != null)
+        {
+            // We look for PlayerCombat OR the specific Turtle/Warrior combat script on the follower
+            var combat = follower.GetComponent<PlayerCombat>();
+            
+            if (combat != null)
+            {
+                Debug.Log($"{follower.name} is performing a Combo Assist!");
+                // Make sure the Follower uses a bigger range or "Super" logic
+                combat.PerformComboAttack(); 
+            }
+        }
+    }
+    // -----------------------
 
     void Switch()
     {
+        // Reset combo when switching characters (optional, but recommended)
+        currentComboCount = 0; 
+
         if (active == warrior)
         {
             SetActive(turtle);
             CambiarTarget(turtle.transform);
-
         }
         else
         {
@@ -53,72 +88,65 @@ public class PlayerManagerDual : MonoBehaviour
         }
     }
 
+    void CambiarTarget(Transform nuevoObjetivo)
+    {
+        camera.Follow = nuevoObjetivo;
+        camera.LookAt = nuevoObjetivo;
+    }
+
     void SetActive(GameObject newActive)
     {
         active = newActive;
-        if (newActive == warrior)
-        {
-
-            follower = turtle;
-            var activeCtrl = active.GetComponent<PlayerController>();
-            if (activeCtrl) activeCtrl.enabled = true;
-
-            if (!underWater)
-            {
-                var activeFol = active.GetComponent<FollowerGround2D>();
-            if (activeFol) activeFol.enabled = false;
-
-            // Desactivar control del seguidor y activar seguimiento
-            var folCtrl = follower.GetComponent<TortugaController>();
-            var folFol = follower.GetComponent<FollowerGround2D>();
-            if (folCtrl) folCtrl.enabled = false;
-            if (folFol)
-            {
-                folFol.leader = active.transform;
-                //folFol.WarpBehindLeader();  lo coloca detrás y en el piso
-                folFol.enabled = true;
-            }
-            }
-            
-        }else if (newActive == turtle)
-        {
-            follower = warrior;
-            if (!underWater)
-            {
-                var activeCtrl = active.GetComponent<TortugaController>();
-                if (activeCtrl) activeCtrl.enabled = true;
-            }
-            
-            var activeFol = active.GetComponent<FollowerGround2D>();
-            
-            if (activeFol) activeFol.enabled = false;
-
-            // Desactivar control del seguidor y activar seguimiento
-            var folCtrl = follower.GetComponent<PlayerController>();
-            var folFol = follower.GetComponent<FollowerGround2D>();
-            if (folCtrl) folCtrl.enabled = false;
-            if (folFol)
-            {
-                folFol.leader = active.transform;
-                //folFol.WarpBehindLeader();  lo coloca detrás y en el piso
-                folFol.enabled = true;
-            }
-        }
         
-    }
+        // Determine who is who
+        if (active == warrior) follower = turtle;
+        else follower = warrior;
 
-    public void RegisterAttack()
-    {
-        attackCounter++;
-        if (attackCounter >= 3)
+        // --- Logic to Enable/Disable Components ---
+        // 1. Enable Input/Control on Active
+        ToggleCharacterControl(active, true);
+        ToggleAI(active, false);
+
+        // 2. Enable AI/Follow on Follower
+        ToggleCharacterControl(follower, false);
+        
+        // Only enable AI if not underwater (based on your logic)
+        if (!underWater)
         {
-            // Combo dual
-            follower.GetComponent<PlayerCombat>().PerformComboAttack();
-            attackCounter = 0;
+            ToggleAI(follower, true, active.transform);
+        }
+        else
+        {
+            ToggleAI(follower, false);
         }
     }
-    
-    public GameObject GetActive()
+
+    // Helper function to clean up the code
+    void ToggleCharacterControl(GameObject charObj, bool isPlayerControlled)
+    {
+        // Assuming both have these, or check specifically
+        var pCtrl = charObj.GetComponent<PlayerController>();
+        var tCtrl = charObj.GetComponent<TortugaController>();
+
+        if (pCtrl) pCtrl.enabled = isPlayerControlled;
+        if (tCtrl) tCtrl.enabled = isPlayerControlled;
+    }
+
+    // Helper function for AI
+    void ToggleAI(GameObject charObj, bool enableAI, Transform target = null)
+    {
+        var companionAI = charObj.GetComponent<CompanionAStar2D>();
+        var seeker = charObj.GetComponent<Seeker>();
+
+        if (companionAI) 
+        {
+            companionAI.enabled = enableAI;
+            if (enableAI && target != null) companionAI.target = target;
+        }
+        if (seeker) seeker.enabled = enableAI;
+    }
+
+         public GameObject GetActive()
     {
         return active;
     }

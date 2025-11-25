@@ -46,7 +46,6 @@ public class PlayerController : MonoBehaviour
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
     private Collider2D col;
-    private PlayerManagerDual manager;
     private PlayerCombat combat;
 
     private Animator animator;
@@ -80,7 +79,6 @@ public class PlayerController : MonoBehaviour
         col = GetComponent<Collider2D>();
         spriteRenderer = GetComponent<SpriteRenderer>();
         combat = GetComponent<PlayerCombat>();
-        manager = FindObjectOfType<PlayerManagerDual>();
         animator = GetComponent<Animator>();
 
         rb.freezeRotation = true;
@@ -128,10 +126,9 @@ public class PlayerController : MonoBehaviour
         }
 
         // Ataque
-        if (attackPressed && combat != null && manager != null)
+        if (attackPressed && combat != null)
         {
             combat.PerformAttack();
-            manager.RegisterAttack();
         }
 
         // Dash

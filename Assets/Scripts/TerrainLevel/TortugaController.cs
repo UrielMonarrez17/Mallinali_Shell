@@ -44,8 +44,6 @@ public class TortugaController : MonoBehaviour
     SpriteRenderer sr;
     TurtleHealth health;
     private PlayerCombat combat;
-    private PlayerManagerDual manager;
-
     // Estado
     bool isGrounded;
     bool isCharging;
@@ -76,7 +74,6 @@ public class TortugaController : MonoBehaviour
         sr = GetComponent<SpriteRenderer>();
         health = GetComponent<TurtleHealth>();
         combat = GetComponent<PlayerCombat>();
-        manager = FindObjectOfType<PlayerManagerDual>();
 
         rb.freezeRotation = true;
         baseGravity = Mathf.Max(0.0001f, rb.gravityScale);
@@ -142,10 +139,9 @@ public class TortugaController : MonoBehaviour
         }
 
          // --- Ataque (si aplica a tu lógica actual) ---
-        if (attackPressed && combat != null && manager != null)
+        if (attackPressed && combat != null)
         {
             combat.PerformAttack();
-            manager.RegisterAttack();
         }
     }
 

@@ -1,4 +1,5 @@
 using System.Collections;
+using Pathfinding;
 using TMPro;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
@@ -102,6 +103,7 @@ private bool isTyping,isDialogueActive;
         isDialogueActive = false;
         dialogueText.SetText("");
         dialoguePanel.SetActive(false);
+        
         result();
         Destroy(gameObject);
     }
@@ -109,10 +111,13 @@ private bool isTyping,isDialogueActive;
     public void result()
     {
         //var manage = manager.GetComponent<PlayerManagerDual>();
-        var turtleFollow = turtle.GetComponent<FollowerGround2D>();
+        var turtleFollow = turtle.GetComponent<Seeker>();
+        var turtleGroundFollow = turtle.GetComponent<CompanionAStar2D>();
+        //var turtleFollow = turtle.GetComponent<SmartPlatformFollower2D>();
         var turtleHealth = turtle.GetComponent<TurtleHealth>();
         manager.SetActive(true);
         turtleFollow.enabled = true;
+        turtleGroundFollow.enabled = true;
         turtleHealth.enabled = true;
 
     }
