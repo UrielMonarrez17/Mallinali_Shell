@@ -9,6 +9,7 @@ TagManager:
   - Principal
   - Trampilla
   - Tortuga
+  - Soul
   layers:
   - Default
   - TransparentFX
@@ -23,8 +24,8 @@ TagManager:
   - Obstacle
   - Enemy
   - PatrolPoint
-  - 
-  - 
+  - Soul
+  - Interactionable
   - 
   - 
   - 

@@ -1,6 +1,7 @@
 using System.Collections;
 using Pathfinding;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.UI;
@@ -35,8 +36,8 @@ private bool isTyping,isDialogueActive;
 
     private void OnTriggerEnter2D(Collider2D other)
     {
-         control = other.GetComponent<PlayerController>();
-        control.SetControl(false);
+        control = other.GetComponent<PlayerController>();
+        control.canControl = false;
         isDialogueActive=true;
         StartDialogue();
     }
@@ -98,7 +99,7 @@ private bool isTyping,isDialogueActive;
 
     public void EndDialogue()
     {
-        control.SetControl(true);
+        control.canControl = true;
         StopAllCoroutines();
         isDialogueActive = false;
         dialogueText.SetText("");
@@ -114,7 +115,7 @@ private bool isTyping,isDialogueActive;
         var turtleFollow = turtle.GetComponent<Seeker>();
         var turtleGroundFollow = turtle.GetComponent<CompanionAStar2D>();
         //var turtleFollow = turtle.GetComponent<SmartPlatformFollower2D>();
-        var turtleHealth = turtle.GetComponent<TurtleHealth>();
+        var turtleHealth = turtle.GetComponent<CharacterStats>();
         manager.SetActive(true);
         turtleFollow.enabled = true;
         turtleGroundFollow.enabled = true;
