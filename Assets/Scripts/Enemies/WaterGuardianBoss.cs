@@ -39,6 +39,9 @@ public class WaterGuardianBoss : EnemyAI
     // State
     private bool isBusy = false; // True when performing an animation/attack
 
+    [Header("Zone Progression")]
+    public TransitionPoint exitPortal;
+
     protected override void Awake()
     {
         base.Awake();
@@ -53,7 +56,10 @@ public class WaterGuardianBoss : EnemyAI
         shootTimer = 1f;
         dashTimer = 5f;
         spawnTimer = 8f;
-        if (stats != null) stats.OnDeath += DropItem;
+        if (stats != null){
+             stats.OnDeath += DropItem;
+             stats.OnDeath += UnlockExit; 
+        }
     }
 
     protected override void Update()
@@ -215,16 +221,33 @@ protected void OnCollisionEnter2D(Collision2D collision)
             }
         }
     }
-    
+
     // --- DEATH EVENT ---
 
     
     // Remember to unsubscribe
-    protected override void OnDestroy()
+protected override void OnDestroy()
+{
+    base.OnDestroy();
+    if (stats != null)
     {
-        base.OnDestroy();
-        if (stats != null) stats.OnDeath -= DropItem;
+        stats.OnDeath -= DropItem;
+        stats.OnDeath -= UnlockExit;
     }
+}
+
+// New Method
+void UnlockExit()
+{
+    if (exitPortal != null)
+    {
+        exitPortal.UnlockPortal();
+    }
+    else
+    {
+        Debug.LogWarning("Boss died but no Exit Portal was assigned in Inspector!");
+    }
+}
 
     void DropItem()
     {

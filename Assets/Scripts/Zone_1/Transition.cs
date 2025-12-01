@@ -21,6 +21,7 @@ public class Transition : MonoBehaviour, IInteract
    private GameObject player;
    private bool haveText;
     [SerializeField] int distance;
+    public GameObject[] parallaxBackgrounds;
     private void Awake()
     {
         confiner = FindAnyObjectByType<CinemachineConfiner2D>();
@@ -39,6 +40,7 @@ public class Transition : MonoBehaviour, IInteract
     {
  if (other.gameObject.CompareTag("Player"))
         {
+            
             if(haveText)
                 interactText.gameObject.SetActive(true);
             interactAllowed = true;
@@ -78,6 +80,16 @@ public class Transition : MonoBehaviour, IInteract
 
         public void beInteracted()
     {
+        if (parallaxBackgrounds != null)
+            {
+                foreach (var bg in parallaxBackgrounds)
+                {
+                    if (bg != null)
+                    {
+                        bg.SetActive(false); // Esto apaga el script y detiene el movimiento
+                    }
+                }
+            }
         confiner.BoundingShape2D = mapBoundry;
         UpdatePlayerPosition(player);
         interactAllowed = false;
