@@ -54,6 +54,9 @@ TagManager:
   - name: Nubes
     uniqueID: 2907563689
     locked: 0
+  - name: Background
+    uniqueID: 1323340387
+    locked: 0
   - name: Mountain
     uniqueID: 2174346259
     locked: 0

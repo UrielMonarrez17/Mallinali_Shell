@@ -14,10 +14,12 @@ public class PlayerCombat : MonoBehaviour
     public float attackCooldown = 0.5f; // <--- NEW VARIABLE
     private float nextAttackTime = 0f;  // <--- NEW VARIABLE
     
+    private Animator animator;
     private SpriteRenderer spriteRenderer;
 
     void Awake()
     {
+        animator = GetComponent<Animator>();
         spriteRenderer = GetComponent<SpriteRenderer>();
     }
 
@@ -26,6 +28,13 @@ public class PlayerCombat : MonoBehaviour
         // 1. CHECK COOLDOWN
         // If the current time is less than the allowed time, we exit immediately.
         if (Time.time < nextAttackTime) return;
+        if (animator != null) animator.SetTrigger("Attack"); 
+        var controller = GetComponent<PlayerController>();
+
+       /* if (controller != null)
+        {
+            StartCoroutine(StopMovementBriefly(controller, 0.3f));
+        }*/
 
         // 2. SET NEXT ATTACK TIME
         nextAttackTime = Time.time + attackCooldown;
@@ -80,6 +89,17 @@ public class PlayerCombat : MonoBehaviour
                 damageable.TakeDamage(attackDamage * 2, attackPoint.position, hitNormal);
             }
         }
+    }
+
+     System.Collections.IEnumerator StopMovementBriefly(PlayerController ctrl, float duration)
+    {
+        ctrl.SetAbilityOverride(true); // Bloquea inputs
+        // Opcional: Frenar en seco la velocidad
+        GetComponent<Rigidbody2D>().linearVelocity = Vector2.zero; 
+        
+        yield return new WaitForSeconds(duration);
+        
+        ctrl.SetAbilityOverride(false); // Libera inputs
     }
 
     void OnDrawGizmosSelected()

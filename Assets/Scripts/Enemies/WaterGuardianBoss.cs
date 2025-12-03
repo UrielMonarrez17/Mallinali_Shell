@@ -42,6 +42,9 @@ public class WaterGuardianBoss : EnemyAI
     [Header("Zone Progression")]
     public TransitionPoint exitPortal;
 
+    [Header("Boss UI")]
+    public string bossDisplayName = "Axolotl Guard";
+
     protected override void Awake()
     {
         base.Awake();
@@ -56,9 +59,20 @@ public class WaterGuardianBoss : EnemyAI
         shootTimer = 1f;
         dashTimer = 5f;
         spawnTimer = 8f;
-        if (stats != null){
-             stats.OnDeath += DropItem;
-             stats.OnDeath += UnlockExit; 
+        if (BossHealthUI.Instance != null)
+        {
+            BossHealthUI.Instance.ShowBar(bossDisplayName);
+        }
+
+        // 2. Suscribirse a cambios de vida y muerte
+        if (stats != null)
+        {
+            stats.OnHealthChanged += UpdateBossBar;
+            stats.OnDeath += OnBossDied;
+            
+            // Mantenemos tus otras suscripciones (DropItem, UnlockExit)
+            stats.OnDeath += DropItem;     
+            stats.OnDeath += UnlockExit;   
         }
     }
 
@@ -132,7 +146,7 @@ public class WaterGuardianBoss : EnemyAI
         anim.SetTrigger("Attack"); // Reuse generic attack anim
         
         // Small delay to match animation
-        yield return new WaitForSeconds(0.3f);
+        yield return new WaitForSeconds(0.9f);
 
         if (projectilePrefab && firePoint)
         {
@@ -230,10 +244,15 @@ protected override void OnDestroy()
 {
     base.OnDestroy();
     if (stats != null)
-    {
-        stats.OnDeath -= DropItem;
-        stats.OnDeath -= UnlockExit;
-    }
+        {
+            stats.OnHealthChanged -= UpdateBossBar;
+            stats.OnDeath -= OnBossDied;
+            stats.OnDeath -= DropItem;
+            stats.OnDeath -= UnlockExit;
+        }
+        
+        // Si destruimos el objeto (escena cambia), ocultamos la barra por si acaso
+        if (BossHealthUI.Instance != null) BossHealthUI.Instance.HideBar();
 }
 
 // New Method
@@ -254,6 +273,22 @@ void UnlockExit()
         if (abilityItemPrefab != null)
         {
             Instantiate(abilityItemPrefab, transform.position, Quaternion.identity);
+        }
+    }
+
+    void UpdateBossBar(int current, int max)
+    {
+        if (BossHealthUI.Instance != null)
+        {
+            BossHealthUI.Instance.UpdateHealth((float)current, (float)max);
+        }
+    }
+
+    void OnBossDied()
+    {
+        if (BossHealthUI.Instance != null)
+        {
+            BossHealthUI.Instance.HideBar();
         }
     }
 }

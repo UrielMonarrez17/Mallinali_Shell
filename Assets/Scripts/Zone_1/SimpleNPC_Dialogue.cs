@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 public class SimpleNPC_Dialogue : MonoBehaviour
@@ -9,13 +10,18 @@ public class SimpleNPC_Dialogue : MonoBehaviour
     public Dialogue_1 dialogueData;
     public GameObject dialoguePanel;
     public TMP_Text dialogueText, nameText;
+    
     public Image portraitImage;
 
+[Header("Eventos")] // <--- 2. NUEVA SECCIÓN
+    [Tooltip("Arrastra aquí lo que quieras que pase al terminar de hablar")]
+    public UnityEvent onDialogueEnded;
+    
     // Internal references
     private PlayerController control;
     private int dialogueIndex;
     private bool isTyping, isDialogueActive;
-
+private Coroutine autoProgressCoroutine;
     void Update()
     {
         // Listen for input only when dialogue is active
@@ -47,6 +53,34 @@ public class SimpleNPC_Dialogue : MonoBehaviour
         }
     }
 
+     public void StartDialogueManually()
+    {
+        // 1. Buscar al jugador activo para congelarlo
+        if (PlayerManagerDual.Instance != null)
+        {
+            GameObject activePlayer = PlayerManagerDual.Instance.GetActive();
+            /*if (activePlayer != null)
+            {
+                control = activePlayer.GetComponent<PlayerController>();
+                if (control)
+                {
+                    control.canControl = false;
+                    // Frenar movimiento residual
+                    var rb = activePlayer.GetComponent<Rigidbody2D>();
+                    if (rb) rb.linearVelocity = Vector2.zero;
+                }
+            }*/
+        }
+
+        // 2. Iniciar la lógica normal
+        isDialogueActive = true;
+        
+        // Aseguramos que el panel se active si estaba apagado
+        if (dialoguePanel != null) dialoguePanel.SetActive(true);
+        
+        StartDialogue();
+    }
+
     // Optional: Keep this if you want to trigger it via a button E instead of walking into it
     public void beInteracted()
     {
@@ -76,16 +110,25 @@ public class SimpleNPC_Dialogue : MonoBehaviour
 
     void NextLine()
     {
+        // CASO 1: El jugador quiere saltar la animación de escribir
         if (isTyping)
         {
-            // If typing, show full line immediately
-            StopAllCoroutines();
+            StopAllCoroutines(); // Detenemos tipeo y cualquier auto-avance pendiente
+            
+            // Mostramos el texto completo de golpe
             dialogueText.SetText(dialogueData.dialogueLine[dialogueIndex]);
             isTyping = false;
+
+            // IMPORTANTE: Si esta línea tenía auto-progreso, debemos reactivar la espera
+            // incluso si el jugador saltó la animación.
+            TryTriggerAutoProgress();
         }
+        // CASO 2: El texto ya se mostró completo y pasamos a la siguiente línea
         else 
         {
-            // If finished typing, go to next line
+            // Detenemos cualquier auto-avance que estuviera corriendo para no saltar doble
+            StopAllCoroutines(); 
+
             dialogueIndex++;
 
             if (dialogueIndex < dialogueData.dialogueLine.Length)
@@ -104,7 +147,7 @@ public class SimpleNPC_Dialogue : MonoBehaviour
         isTyping = true;
         dialogueText.SetText("");
 
-        // Logic to switch portraits based on your ScriptableObject data
+        // Lógica de retratos
         if (dialogueIndex < dialogueData.autoProgressLine.Length)
         {
             if (dialogueData.autoProgressLine[dialogueIndex])
@@ -113,7 +156,7 @@ public class SimpleNPC_Dialogue : MonoBehaviour
                 portraitImage.sprite = dialogueData.playerPortrait;
         }
 
-        // Typewriter effect
+        // Efecto de tipeo
         foreach (char letter in dialogueData.dialogueLine[dialogueIndex].ToCharArray())
         {
             dialogueText.text += letter;
@@ -121,20 +164,37 @@ public class SimpleNPC_Dialogue : MonoBehaviour
         }
 
         isTyping = false;
+
+        // Una vez termina de escribir, intentamos activar el auto-avance
+        TryTriggerAutoProgress();
+    }
+
+    // --- NUEVA FUNCIÓN PARA GESTIONAR EL AUTO-AVANCE ---
+    void TryTriggerAutoProgress()
+    {
+        // Verificamos si existe el dato en el array y si es TRUE
+        if (dialogueIndex < dialogueData.autoProgressLine.Length && dialogueData.autoProgressLine[dialogueIndex])
+        {
+            // Iniciamos la cuenta regresiva para pasar a la siguiente línea solo
+            autoProgressCoroutine = StartCoroutine(AutoProgressTimer());
+        }
+    }
+
+    IEnumerator AutoProgressTimer()
+    {
+        yield return new WaitForSeconds(dialogueData.autoProgressDelay);
+        NextLine(); // Llamamos a NextLine automáticamente
     }
 
     public void EndDialogue()
     {
-        // 1. Unfreeze Player
         if(control != null) control.canControl = true;
         
-        // 2. Cleanup UI
         StopAllCoroutines();
         isDialogueActive = false;
         dialogueText.SetText("");
         dialoguePanel.SetActive(false);
         
-        // 3. IMPORTANT: We do NOT destroy the object anymore, 
-        // so the player can talk to this NPC again if they re-enter the trigger.
+        onDialogueEnded?.Invoke();
     }
 }
